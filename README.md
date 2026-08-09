@@ -14,7 +14,7 @@ newer and Python 3 are already installed. It never exports or overwrites
 Install the pinned Herdr setup with:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/ram4-dev/herdr-config/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/ram4-dev/herdr-config/v0.1.0/install.sh | sh
 ```
 
 For local development:
