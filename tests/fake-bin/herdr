@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+
+set -eu
+
+: "${FAKE_HERDR_LOG:?FAKE_HERDR_LOG must be set}"
+: "${FAKE_HERDR_STATE:?FAKE_HERDR_STATE must be set}"
+: "${FAKE_SANDBOX_ROOT:?FAKE_SANDBOX_ROOT must be set}"
+
+case "${HOME:-}" in
+  "$FAKE_SANDBOX_ROOT"/*) ;;
+  *)
+    printf 'fake herdr refused unsafe HOME: %s\n' "${HOME:-<unset>}" >&2
+    exit 98
+    ;;
+esac
+
+mkdir -p "$(dirname "$FAKE_HERDR_LOG")" "$FAKE_HERDR_STATE"
+printf '%s\n' "$*" >> "$FAKE_HERDR_LOG"
+
+installed_file="$FAKE_HERDR_STATE/installed-plugins"
+install_count_file="$FAKE_HERDR_STATE/install-count"
+
+plugin_id_for_repo() {
+  case "$1" in
+    persiyanov/herdr-reviewr) printf '%s\n' 'persiyanov.reviewr' ;;
+    iurysza/herdr-tab-smart-rename) printf '%s\n' 'tab-smart-rename' ;;
+    *) printf '%s\n' "${1#*/}" ;;
+  esac
+}
+
+print_plugin_list() {
+  printf '{"result":{"plugins":['
+  separator=''
+  if [ -f "$installed_file" ]; then
+    while IFS="	" read -r repo ref enabled; do
+      [ -n "$repo" ] || continue
+      enabled=${enabled:-1}
+      owner=${repo%%/*}
+      name=${repo#*/}
+      plugin_id=$(plugin_id_for_repo "$repo")
+      if [ "$enabled" = "1" ]; then enabled_json=true; else enabled_json=false; fi
+      printf '%s{"plugin_id":"%s","enabled":%s,"source":{"owner":"%s","repo":"%s","resolved_commit":"%s"}}' \
+        "$separator" "$plugin_id" "$enabled_json" "$owner" "$name" "$ref"
+      separator=','
+    done < "$installed_file"
+  fi
+  printf ']} }\n'
+}
+
+case "${1:-}" in
+  --version|version)
+    printf 'herdr 0.8.0-test\n'
+    ;;
+  plugin)
+    case "${2:-}" in
+      install)
+        install_count=0
+        if [ -f "$install_count_file" ]; then
+          install_count=$(cat "$install_count_file")
+        fi
+        install_count=$((install_count + 1))
+        printf '%s\n' "$install_count" > "$install_count_file"
+
+        if [ "${FAKE_HERDR_FAIL_PLUGIN_INSTALL:-0}" = "1" ] || \
+          [ "${FAKE_HERDR_FAIL_PLUGIN_INSTALL_AT:-0}" = "$install_count" ]; then
+          printf 'simulated plugin installation failure\n' >&2
+          exit 42
+        fi
+
+        plugin="${3:-}"
+        ref=""
+        shift 3 || true
+        while [ "$#" -gt 0 ]; do
+          case "$1" in
+            --ref)
+              shift
+              ref="${1:-}"
+              ;;
+          esac
+          shift || true
+        done
+        if [ -f "$installed_file" ]; then
+          temp="$installed_file.tmp"
+          awk -F'	' -v repo="$plugin" '$1 != repo' "$installed_file" > "$temp"
+          mv "$temp" "$installed_file"
+        fi
+        printf '%s\t%s\t1\n' "$plugin" "$ref" >> "$installed_file"
+        ;;
+      list)
+        print_plugin_list
+        ;;
+      config-dir)
+        mkdir -p "$FAKE_HERDR_STATE/plugin-config/${3:-unknown}"
+        printf '%s\n' "$FAKE_HERDR_STATE/plugin-config/${3:-unknown}"
+        ;;
+      uninstall)
+        plugin_id="${3:-}"
+        if [ -f "$installed_file" ]; then
+          temp="$installed_file.tmp"
+          : > "$temp"
+          while IFS="	" read -r repo ref enabled; do
+            [ "$(plugin_id_for_repo "$repo")" = "$plugin_id" ] || \
+              printf '%s\t%s\t%s\n' "$repo" "$ref" "${enabled:-1}" >> "$temp"
+          done < "$installed_file"
+          mv "$temp" "$installed_file"
+        fi
+        ;;
+      enable|disable)
+        plugin_id="${3:-}"
+        desired_enabled=1
+        [ "${2:-}" = "enable" ] || desired_enabled=0
+        temp="$installed_file.tmp"
+        : > "$temp"
+        while IFS="	" read -r repo ref enabled; do
+          if [ "$(plugin_id_for_repo "$repo")" = "$plugin_id" ]; then
+            enabled=$desired_enabled
+          fi
+          printf '%s\t%s\t%s\n' "$repo" "$ref" "${enabled:-1}" >> "$temp"
+        done < "$installed_file"
+        mv "$temp" "$installed_file"
+        ;;
+      *)
+        printf 'unsupported fake herdr plugin command: %s\n' "${2:-}" >&2
+        exit 2
+        ;;
+    esac
+    ;;
+  config)
+    case "${2:-}" in
+      check)
+        if [ "${FAKE_HERDR_FAIL_CONFIG_CHECK:-0}" = "1" ]; then
+          printf 'simulated config validation failure\n' >&2
+          exit 43
+        fi
+        ;;
+      *)
+        printf 'unsupported fake herdr config command: %s\n' "${2:-}" >&2
+        exit 2
+        ;;
+    esac
+    ;;
+  server)
+    case "${2:-}" in
+      reload-config)
+        [ "${FAKE_HERDR_FAIL_RELOAD:-0}" != "1" ]
+        ;;
+      *)
+        printf 'unsupported fake herdr server command: %s\n' "${2:-}" >&2
+        exit 2
+        ;;
+    esac
+    ;;
+  *)
+    printf 'unsupported fake herdr command: %s\n' "${1:-}" >&2
+    exit 2
+    ;;
+esac

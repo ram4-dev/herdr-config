@@ -1,0 +1,7 @@
+# herdr-config plugin set. Every entry is pinned to an immutable commit.
+natori-hrj/herdr-lazy@6a2132b74283b586dbe8b995f2aacd47255d6d8b
+jeffarese/herdr-bar@01cc0620ec743ee7a62a561551b59d9be81bd563
+smarzban/herdr-file-viewer@71d4c1c3706e7958c714789b035a99d949620a9e
+persiyanov/herdr-reviewr@792b4b31475ddbf263ee4d421a984e7418031506
+iurysza/herdr-tab-smart-rename@a580a9ef248357ea9d85cf0f2131acb2e3fae240
+
