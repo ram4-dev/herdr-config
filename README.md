@@ -14,7 +14,7 @@ newer and Python 3 are already installed. It never exports or overwrites
 Install the pinned Herdr setup with:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/ram4-dev/herdr-config/v0.1.0/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/ram4-dev/herdr-config/v0.1.1/install.sh | sh
 ```
 
 For local development:
@@ -48,6 +48,25 @@ The installer:
 - `iurysza/herdr-tab-smart-rename`
 
 See [plugins.list](plugins.list) and [plugins.lock](plugins.lock) for exact commits.
+
+## Smart Rename
+
+`iurysza/herdr-tab-smart-rename` is part of the pinned installation. It gives
+deterministic names to known processes and can use an OpenAI-compatible model for
+ambiguous tabs. Bun 1.1.34 or newer is required by the plugin build.
+
+After installation:
+
+```sh
+herdr plugin action invoke configure-ai --plugin tab-smart-rename
+herdr plugin action invoke check-ai --plugin tab-smart-rename
+herdr plugin action invoke start --plugin tab-smart-rename
+```
+
+The configuration action creates the private `provider.env` with mode `0600`.
+Without an API key, deterministic tab names still work. The installer never reads,
+exports, or overwrites that private file. Safe defaults are documented in
+[`config/tab-smart-rename/provider.env.example`](config/tab-smart-rename/provider.env.example).
 
 ## Overrides
 

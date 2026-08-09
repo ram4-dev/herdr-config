@@ -596,5 +596,7 @@ case "$COMMAND" in
     if ! write_lazy_files; then rollback "could not write herdr-lazy configuration"; fi
     "$HERDR_BIN" server reload-config >/dev/null 2>&1 || true
     say "Installed successfully. Snapshot: $SNAPSHOT_DIR"
+    say "Smart Rename setup: herdr plugin action invoke configure-ai --plugin tab-smart-rename"
+    say "Smart Rename start: herdr plugin action invoke start --plugin tab-smart-rename"
     ;;
 esac
