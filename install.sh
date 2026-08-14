@@ -62,6 +62,7 @@ jeffarese/herdr-bar|herdr-bar|01cc0620ec743ee7a62a561551b59d9be81bd563
 smarzban/herdr-file-viewer|herdr-file-viewer|71d4c1c3706e7958c714789b035a99d949620a9e
 persiyanov/herdr-reviewr|persiyanov.reviewr|792b4b31475ddbf263ee4d421a984e7418031506
 iurysza/herdr-tab-smart-rename|tab-smart-rename|a580a9ef248357ea9d85cf0f2131acb2e3fae240
+ram4-dev/herdr-codex-usage|ram4.codex-usage|eebd90913b83788240d20e597383b8a6ae462b18
 EOF
 }
 
@@ -106,7 +107,7 @@ require_runtime() {
   command -v "$HERDR_BIN" >/dev/null 2>&1 || die "Herdr is required but '$HERDR_BIN' was not found in PATH"
   command -v python3 >/dev/null 2>&1 || die "python3 is required"
   herdr_version=$(herdr_version)
-  version_supported "$herdr_version" || die "Herdr 0.7.5 or newer is required (found ${herdr_version:-unknown})"
+  version_supported "$herdr_version" || die "Herdr 0.9.0 or newer is required (found ${herdr_version:-unknown})"
 }
 
 herdr_version() {
@@ -117,7 +118,7 @@ version_supported() {
   python3 - "$1" <<'PY'
 import re, sys
 match = re.search(r"(\d+)\.(\d+)\.(\d+)", sys.argv[1])
-raise SystemExit(0 if match and tuple(map(int, match.groups())) >= (0, 7, 5) else 1)
+raise SystemExit(0 if match and tuple(map(int, match.groups())) >= (0, 9, 0) else 1)
 PY
 }
 
@@ -314,6 +315,10 @@ managed_values = {
         "agent_panel_sort": '"priority"',
         "prompt_new_tab_name": "false",
     },
+    "ui.sidebar.session_footer": {
+        "tokens": '["$agent_usage"]',
+        "action": '"ram4.codex-usage.open"',
+    },
 }
 commands = [
     ("prefix+k", "herdr-bar.open", "open command bar"),
@@ -477,6 +482,10 @@ expected_values = {
         "next_agent": '"prefix+down"', "focus_agent": '"prefix+alt+1..9"',
     },
     "ui": {"agent_panel_sort": '"priority"', "prompt_new_tab_name": "false"},
+    "ui.sidebar.session_footer": {
+        "tokens": '["$agent_usage"]',
+        "action": '"ram4.codex-usage.open"',
+    },
 }
 sections = {name: {} for name in expected_values}
 current = None
@@ -506,7 +515,7 @@ doctor() {
   if command -v python3 >/dev/null 2>&1 && version_supported "$current_version"; then
     say "OK   Herdr $current_version"
   else
-    say "FAIL Herdr 0.7.5+ required; found ${current_version:-unknown}"
+    say "FAIL Herdr 0.9.0+ required; found ${current_version:-unknown}"
     problems=$((problems + 1))
   fi
   if HERDR_CONFIG_PATH="$CONFIG_FILE" "$HERDR_BIN" config check >/dev/null 2>&1; then say "OK   config parses"; else say "FAIL config check"; problems=$((problems + 1)); fi

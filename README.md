@@ -5,7 +5,7 @@ snapshots, and rollback.
 
 ## Status
 
-This repository is under initial development. It currently assumes Herdr 0.7.5 or
+This repository is under initial development. It currently assumes Herdr 0.9.0 or
 newer and Python 3 are already installed. It never exports or overwrites
 `tab-smart-rename/provider.env`; API credentials remain local to each machine.
 
@@ -46,8 +46,24 @@ The installer:
 - `smarzban/herdr-file-viewer`
 - `persiyanov/herdr-reviewr`
 - `iurysza/herdr-tab-smart-rename`
+- [`ram4-dev/herdr-codex-usage`](https://github.com/ram4-dev/herdr-codex-usage)
 
 See [plugins.list](plugins.list) and [plugins.lock](plugins.lock) for exact commits.
+
+## Agent usage
+
+`ram4-dev/herdr-codex-usage` detects the coding-agent executables available on
+`PATH` and publishes one global sidebar footer. Codex includes its real remaining
+5-hour and weekly allowance when present; Claude, Cursor, and other detected
+agents are marked with `✓` without inventing quota data.
+
+The installer owns this footer configuration:
+
+```toml
+[ui.sidebar.session_footer]
+tokens = ["$agent_usage"]
+action = "ram4.codex-usage.open"
+```
 
 ## Smart Rename
 

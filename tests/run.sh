@@ -59,6 +59,7 @@ setup_sandbox() {
   export PATH="$FAKE_BIN:$ORIGINAL_PATH"
   unset FAKE_HERDR_FAIL_PLUGIN_INSTALL FAKE_HERDR_FAIL_PLUGIN_INSTALL_AT
   unset FAKE_HERDR_FAIL_CONFIG_CHECK FAKE_HERDR_FAIL_RELOAD
+  unset FAKE_HERDR_VERSION
   mkdir -p "$HOME" "$HERDR_CONFIG_HOME"
   : > "$FAKE_HERDR_LOG"
 }
@@ -94,6 +95,10 @@ test_fresh_install() {
   assert_equals "$(count_fixed "$config" "$END_MARKER")" '1'
   assert_file_missing "$HERDR_CONFIG_HOME/provider.env"
   assert_log_contains 'config check'
+  grep -F '[ui.sidebar.session_footer]' "$config" >/dev/null || fail 'agent usage footer section missing'
+  grep -F 'tokens = ["$agent_usage"]' "$config" >/dev/null || fail 'agent usage footer token missing'
+  grep -F 'action = "ram4.codex-usage.open"' "$config" >/dev/null || fail 'agent usage footer action missing'
+  assert_log_contains 'plugin install ram4-dev/herdr-codex-usage --ref eebd90913b83788240d20e597383b8a6ae462b18 --yes'
 
   plugin_lines=$(grep -c '^plugin install ' "$FAKE_HERDR_LOG" || true)
   [ "$plugin_lines" -gt 0 ] || fail 'expected at least one pinned plugin installation'
@@ -115,6 +120,15 @@ test_idempotent_rerun() {
   assert_files_equal "$current_sandbox/first-config.toml" "$config"
   assert_equals "$(count_fixed "$config" "$BEGIN_MARKER")" '1'
   assert_equals "$(count_fixed "$config" "$END_MARKER")" '1'
+}
+
+test_rejects_herdr_0_8() {
+  export FAKE_HERDR_VERSION=0.8.0
+  if "$INSTALLER" install --dry-run >"$current_sandbox/version.out" 2>&1; then
+    fail 'installer unexpectedly accepted Herdr 0.8.0'
+  fi
+  grep -F 'Herdr 0.9.0 or newer is required' "$current_sandbox/version.out" >/dev/null || \
+    fail 'minimum-version failure did not explain the Herdr 0.9.0 requirement'
 }
 
 test_preserves_unrelated_config() {
@@ -306,6 +320,7 @@ trap teardown_sandbox EXIT HUP INT TERM
 
 run_test 'fresh install' test_fresh_install
 run_test 'idempotent rerun' test_idempotent_rerun
+run_test 'rejects Herdr 0.8.x' test_rejects_herdr_0_8
 run_test 'preserves unrelated config' test_preserves_unrelated_config
 run_test 'does not duplicate managed block' test_no_duplicate_managed_block
 run_test 'preserves custom binding for a managed action' test_preserves_custom_binding_for_managed_action

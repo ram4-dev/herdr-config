@@ -24,6 +24,7 @@ plugin_id_for_repo() {
   case "$1" in
     persiyanov/herdr-reviewr) printf '%s\n' 'persiyanov.reviewr' ;;
     iurysza/herdr-tab-smart-rename) printf '%s\n' 'tab-smart-rename' ;;
+    ram4-dev/herdr-codex-usage) printf '%s\n' 'ram4.codex-usage' ;;
     *) printf '%s\n' "${1#*/}" ;;
   esac
 }
@@ -49,7 +50,7 @@ print_plugin_list() {
 
 case "${1:-}" in
   --version|version)
-    printf 'herdr 0.8.0-test\n'
+    printf 'herdr %s\n' "${FAKE_HERDR_VERSION:-0.9.0-test}"
     ;;
   plugin)
     case "${2:-}" in
